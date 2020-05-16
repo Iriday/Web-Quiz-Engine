@@ -28,6 +28,11 @@ public class QuizController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
+    @GetMapping(path = "/api/quizzes")
+    public List<Quiz> getAllQuizzes() {
+        return quizzes;
+    }
+
     @PostMapping(path = "/api/quizzes/{id}/solve")
     public ResponseEntity<SolveQuizResponse> solveQuiz(@PathVariable int id, @RequestParam("answer") int answer) {
         for (Quiz quiz : quizzes) {
