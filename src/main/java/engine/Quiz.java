@@ -2,16 +2,19 @@ package engine;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import javax.validation.constraints.NotNull;
+
 public class Quiz {
     private static int idCounter = 0;
     private final int id = ++idCounter;
     private final String title;
     private final String text;
     private final String[] options;
+    @NotNull
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private final int answer;
+    private final int[] answer;
 
-    public Quiz(String title, String text, String[] options, int answer) {
+    public Quiz(String title, String text, String[] options, int[] answer) {
         this.title = title;
         this.text = text;
         this.options = options;
@@ -34,7 +37,7 @@ public class Quiz {
         return options;
     }
 
-    public int getAnswer() {
+    public int[] getAnswer() {
         return answer;
     }
 }
