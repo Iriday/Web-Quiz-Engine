@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,8 +20,10 @@ public class QuizController {
     }
 
     @PostMapping(path = "/api/quizzes")
-    public Quiz addQuiz(@RequestBody Quiz quiz) {
+    public Quiz addQuiz(@Valid @RequestBody Quiz quiz) {
         throwIfAnswerIsInvalid(quiz.getOptions(), quiz.getAnswer());
+        if (!containsUniqueValues(quiz.getOptions())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate detected in options");
+
         quizzes.add(quiz);
         return quiz;
     }
@@ -63,7 +66,11 @@ public class QuizController {
                 || answer.length > options.length
                 || (answer.length > 0 &&
                 (IntStream.of(answer).max().orElseThrow() >= options.length || IntStream.of(answer).min().orElseThrow() < 0))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect data");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "answer is not valid");
         }
+    }
+
+    private static boolean containsUniqueValues(String[] data) {
+        return Arrays.stream(data).distinct().toArray().length == data.length;
     }
 }
