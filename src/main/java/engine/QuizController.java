@@ -1,76 +1,68 @@
 package engine;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 @RestController
 public class QuizController {
-    private final List<Quiz> quizzes = new ArrayList<>();
-
-    public QuizController() {
-    }
+    @Autowired
+    QuizRepository quizRepo;
 
     @PostMapping(path = "/api/quizzes")
     public Quiz addQuiz(@Valid @RequestBody Quiz quiz) {
         throwIfAnswerIsInvalid(quiz.getOptions(), quiz.getAnswer());
-        if (!containsUniqueValues(quiz.getOptions())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate detected in options");
-
-        quizzes.add(quiz);
-        return quiz;
+        if (!onlyUniqueValues(quiz.getOptions())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate detected in options");
+        return quizRepo.save(quiz);
     }
 
     @GetMapping(path = "/api/quizzes/{id}")
-    public ResponseEntity<Quiz> getQuiz(@PathVariable int id) {
-        for (Quiz quiz : quizzes) {
-            if (quiz.getId() == id) return new ResponseEntity<>(quiz, HttpStatus.OK);
-        }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    public Quiz getQuiz(@PathVariable long id) {
+        return quizRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping(path = "/api/quizzes")
-    public List<Quiz> getAllQuizzes() {
-        return quizzes;
+    public Iterable<Quiz> getAllQuizzes() {
+        return quizRepo.findAll();
     }
 
     @PostMapping(path = "/api/quizzes/{id}/solve")
-    public SolveQuizResponse solveQuiz(@PathVariable int id, @RequestBody Map<String, int[]> mapAnswer) {
-        for (Quiz quiz : quizzes) {
-            if (quiz.getId() == id) {
-                int[] answer = mapAnswer.get("answer");
-                if (answer == null || mapAnswer.size() != 1) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect data");
-                }
-                throwIfAnswerIsInvalid(quiz.getOptions(), answer);
+    public SolveQuizResponse solveQuiz(@PathVariable long id, @RequestBody Map<String, List<Integer>> mapAnswer) {
+        Quiz quiz = quizRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-                if (Arrays.equals(Arrays.stream(quiz.getAnswer()).sorted().toArray(), Arrays.stream(answer).sorted().toArray())) {
-                    return new SolveQuizResponse(true, "Congratulations, you're right!");
-                } else {
-                    return new SolveQuizResponse(false, "Wrong answer! Please, try again.");
-                }
-            }
+        List<Integer> answer = mapAnswer.get("answer");
+        if (answer == null || mapAnswer.size() != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect data");
         }
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        throwIfAnswerIsInvalid(quiz.getOptions(), answer);
+
+        if (equalsIgnoreOrder(quiz.getAnswer(), answer)) {
+            return new SolveQuizResponse(true, "Congratulations, you're right!");
+        } else {
+            return new SolveQuizResponse(false, "Wrong answer! Please, try again.");
+        }
     }
 
-    private static void throwIfAnswerIsInvalid(String[] options, int[] answer) {
-        if (Arrays.stream(answer).distinct().toArray().length != answer.length
-                || answer.length > options.length
-                || (answer.length > 0 &&
-                (IntStream.of(answer).max().orElseThrow() >= options.length || IntStream.of(answer).min().orElseThrow() < 0))) {
+    private static void throwIfAnswerIsInvalid(List<String> options, List<Integer> answer) {
+        if (answer.stream().distinct().count() != answer.size()
+                || answer.size() > options.size()
+                || (answer.size() > 0 &&
+                (answer.stream().max(Integer::compare).orElseThrow() >= options.size() || answer.stream().min(Integer::compare).orElseThrow() < 0))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "answer is not valid");
         }
     }
 
-    private static boolean containsUniqueValues(String[] data) {
-        return Arrays.stream(data).distinct().toArray().length == data.length;
+    private static <T> boolean onlyUniqueValues(List<T> data) {
+        return data.stream().distinct().count() == data.size();
+    }
+
+    private static <T> boolean equalsIgnoreOrder(List<T> one, List<T> two) {
+        return one.stream().sorted().collect(Collectors.toList()).equals(two.stream().sorted().collect(Collectors.toList()));
     }
 }

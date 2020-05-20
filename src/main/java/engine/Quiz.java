@@ -2,32 +2,36 @@ package engine;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.ArrayList;
+import java.util.List;
 
+@Entity
 public class Quiz {
-    private static int idCounter = 0;
-    private final int id = ++idCounter;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private long id;
+
     @NotBlank(message = "title is mandatory")
-    private final String title;
+    private String title;
+
     @NotBlank(message = "text is mandatory")
-    private final String text;
+    private String text;
+
     @NotNull
     @Size(min = 2, message = "options.size should be >= 2")
-    private final String[] options;
+    @ElementCollection
+    private List<String> options = new ArrayList<>();
+
     @NotNull
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private final int[] answer;
+    @ElementCollection
+    private List<Integer> answer = new ArrayList<>();
 
-    public Quiz(String title, String text, String[] options, int[] answer) {
-        this.title = title;
-        this.text = text;
-        this.options = options;
-        this.answer = answer;
-    }
-
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -39,11 +43,27 @@ public class Quiz {
         return text;
     }
 
-    public String[] getOptions() {
+    public List<String> getOptions() {
         return options;
     }
 
-    public int[] getAnswer() {
+    public List<Integer> getAnswer() {
         return answer;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public void setOptions(List<String> options) {
+        this.options = options;
+    }
+
+    public void setAnswer(List<Integer> answer) {
+        this.answer = answer;
     }
 }
