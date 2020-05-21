@@ -49,6 +49,13 @@ public class QuizController {
         }
     }
 
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+    @DeleteMapping(path = "/api/quizzes/{id}")
+    public void deleteQuiz(@PathVariable long id) {
+        if (!quizRepo.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        quizRepo.deleteById(id);
+    }
+
     private static void throwIfAnswerIsInvalid(List<String> options, List<Integer> answer) {
         if (answer.stream().distinct().count() != answer.size()
                 || answer.size() > options.size()
