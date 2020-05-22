@@ -56,6 +56,13 @@ public class QuizController {
         quizRepo.deleteById(id);
     }
 
+    @PutMapping(path = "/api/quizzes/{id}")
+    public Quiz updateQuiz(@PathVariable long id, @Valid @RequestBody Quiz quiz) {
+        if (!quizRepo.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        quiz.setId(id);
+        return addQuiz(quiz);
+    }
+
     private static void throwIfAnswerIsInvalid(List<String> options, List<Integer> answer) {
         if (answer.stream().distinct().count() != answer.size()
                 || answer.size() > options.size()
