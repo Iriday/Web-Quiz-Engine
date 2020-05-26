@@ -19,7 +19,7 @@ public class User implements UserDetails {
     private String email;
 
     @NotNull(message = "password is mandatory")
-    @Size(min = 6, max = 20, message = "password.size should be >=6 && <=20")
+    @Size(min = 6, max = 75, message = "password.size should be >=6 && <=75")
     private String password;
 
     @Override
