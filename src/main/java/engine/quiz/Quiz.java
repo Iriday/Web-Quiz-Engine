@@ -1,5 +1,6 @@
 package engine.quiz;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.*;
@@ -31,6 +32,9 @@ public class Quiz {
     @ElementCollection
     private List<Integer> answer = new ArrayList<>();
 
+    @JsonIgnore
+    private String createdBy;
+
     public long getId() {
         return id;
     }
@@ -51,6 +55,10 @@ public class Quiz {
         return answer;
     }
 
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
     public void setId(long id) {
         this.id = id;
     }
@@ -69,5 +77,9 @@ public class Quiz {
 
     public void setAnswer(List<Integer> answer) {
         this.answer = answer;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 }

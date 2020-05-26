@@ -2,10 +2,12 @@ package engine.quiz;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,9 +18,11 @@ public class QuizController {
     QuizRepository quizRepo;
 
     @PostMapping(path = "/api/quizzes")
-    public Quiz addQuiz(@Valid @RequestBody Quiz quiz) {
+    public Quiz addQuiz(@Valid @RequestBody Quiz quiz, @AuthenticationPrincipal Principal principal) {
         throwIfAnswerIsInvalid(quiz.getOptions(), quiz.getAnswer());
-        if (!onlyUniqueValues(quiz.getOptions())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate detected in options");
+        if (!onlyUniqueValues(quiz.getOptions()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate detected in options");
+        quiz.setCreatedBy(principal.getName());
         return quizRepo.save(quiz);
     }
 
@@ -51,16 +55,18 @@ public class QuizController {
 
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
     @DeleteMapping(path = "/api/quizzes/{id}")
-    public void deleteQuiz(@PathVariable long id) {
-        if (!quizRepo.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    public void deleteQuiz(@PathVariable long id, @AuthenticationPrincipal Principal principal) {
+        Quiz quiz = quizRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!quiz.getCreatedBy().equals(principal.getName())) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         quizRepo.deleteById(id);
     }
 
     @PutMapping(path = "/api/quizzes/{id}")
-    public Quiz updateQuiz(@PathVariable long id, @Valid @RequestBody Quiz quiz) {
-        if (!quizRepo.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        quiz.setId(id);
-        return addQuiz(quiz);
+    public Quiz updateQuiz(@PathVariable long id, @Valid @RequestBody Quiz updatedQuiz, @AuthenticationPrincipal Principal principal) {
+        Quiz quiz = quizRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!quiz.getCreatedBy().equals(principal.getName())) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        updatedQuiz.setId(id);
+        return addQuiz(updatedQuiz, principal);
     }
 
     private static void throwIfAnswerIsInvalid(List<String> options, List<Integer> answer) {
