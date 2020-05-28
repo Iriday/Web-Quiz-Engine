@@ -13,12 +13,8 @@ public class UserController {
     @Autowired
     private UserService service;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
     @PostMapping(path = "/api/register")
     public void registerUser(@RequestBody @Valid User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
         service.registerUser(user);
     }
 }
