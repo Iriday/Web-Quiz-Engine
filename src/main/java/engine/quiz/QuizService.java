@@ -1,6 +1,9 @@
 package engine.quiz;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,8 +30,8 @@ public class QuizService {
         return quizRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    public Iterable<Quiz> getAllQuizzes() {
-        return quizRepo.findAll();
+    public Page<Quiz> getAllQuizzes(int page, int size, String sortBy) {
+        return quizRepo.findAll(PageRequest.of(page, size, Sort.by(sortBy).ascending()));
     }
 
     public SolveQuizResponse solveQuiz(long id, Map<String, List<Integer>> mapAnswer) {

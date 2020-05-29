@@ -1,6 +1,7 @@
 package engine.quiz;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,8 +27,8 @@ public class QuizController {
     }
 
     @GetMapping(path = "/api/quizzes")
-    public Iterable<Quiz> getAllQuizzes() {
-        return quizService.getAllQuizzes();
+    public Page<Quiz> getAllQuizzes(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return quizService.getAllQuizzes(page, size, "id");
     }
 
     @PostMapping(path = "/api/quizzes/{id}/solve")
