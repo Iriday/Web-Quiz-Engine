@@ -2,6 +2,7 @@ package engine.quiz;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -32,8 +33,8 @@ public class QuizController {
     }
 
     @PostMapping(path = "/api/quizzes/{id}/solve")
-    public SolveQuizResponse solveQuiz(@PathVariable long id, @RequestBody Map<String, List<Integer>> mapAnswer) {
-        return quizService.solveQuiz(id, mapAnswer);
+    public SolveQuizResponse solveQuiz(@PathVariable long id, @RequestBody Map<String, List<Integer>> mapAnswer, @AuthenticationPrincipal Principal principal) {
+        return quizService.solveQuiz(id, mapAnswer, principal.getName());
     }
 
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
@@ -45,5 +46,10 @@ public class QuizController {
     @PutMapping(path = "/api/quizzes/{id}")
     public Quiz updateQuiz(@PathVariable long id, @Valid @RequestBody Quiz updatedQuiz, @AuthenticationPrincipal Principal principal) {
         return quizService.updateQuiz(id, updatedQuiz, principal);
+    }
+
+    @GetMapping(path = "/api/quizzes/completed")
+    public Page<QuizCompletionInfo> getCurrentUserQuizCompletionInfos(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @AuthenticationPrincipal Principal principal) {
+        return quizService.getQuizCompletinoInfosByUserName(page, size, Sort.by("completedAt").descending(), principal.getName());
     }
 }

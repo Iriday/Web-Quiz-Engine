@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,6 +18,9 @@ import java.util.stream.Collectors;
 public class QuizService {
     @Autowired
     private QuizRepository quizRepo;
+
+    @Autowired
+    private QuizCompletionInfoRepository quizCompletionInfoRepo;
 
     public Quiz addQuiz(Quiz quiz, Principal principal) {
         throwIfAnswerIsInvalid(quiz.getOptions(), quiz.getAnswer());
@@ -34,7 +38,7 @@ public class QuizService {
         return quizRepo.findAll(PageRequest.of(page, size, Sort.by(sortBy).ascending()));
     }
 
-    public SolveQuizResponse solveQuiz(long id, Map<String, List<Integer>> mapAnswer) {
+    public SolveQuizResponse solveQuiz(long id, Map<String, List<Integer>> mapAnswer, String userName) {
         Quiz quiz = quizRepo.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         List<Integer> answer = mapAnswer.get("answer");
@@ -44,6 +48,7 @@ public class QuizService {
         throwIfAnswerIsInvalid(quiz.getOptions(), answer);
 
         if (equalsIgnoreOrder(quiz.getAnswer(), answer)) {
+            quizCompletionInfoRepo.save(new QuizCompletionInfo(userName, id, LocalDateTime.now().toString()));
             return new SolveQuizResponse(true, "Congratulations, you're right!");
         } else {
             return new SolveQuizResponse(false, "Wrong answer! Please, try again.");
@@ -78,5 +83,9 @@ public class QuizService {
 
     private static <T> boolean equalsIgnoreOrder(List<T> one, List<T> two) {
         return one.stream().sorted().collect(Collectors.toList()).equals(two.stream().sorted().collect(Collectors.toList()));
+    }
+
+    public Page<QuizCompletionInfo> getQuizCompletinoInfosByUserName(int page, int size, Sort sort, String userName) {
+        return quizCompletionInfoRepo.findAllByCompletedBy(userName, PageRequest.of(page, size, sort));
     }
 }
